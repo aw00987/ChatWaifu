@@ -48,7 +48,9 @@ public class MainActivity extends AppCompatActivity {
         sendButton = findViewById(R.id.send_btn);
 
         //setup recycler view
-        recyclerView.setAdapter(new ChatMessageAdapter(new ArrayList<>()));
+        this.messageList = new ArrayList<>();
+        this.chatMessageAdapter = new ChatMessageAdapter(messageList);
+        recyclerView.setAdapter(chatMessageAdapter);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setStackFromEnd(true);
         recyclerView.setLayoutManager(layoutManager);

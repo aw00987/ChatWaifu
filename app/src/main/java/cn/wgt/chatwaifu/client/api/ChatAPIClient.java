@@ -32,12 +32,12 @@ public class ChatAPIClient {
         List<String> apiKeys = Collections.singletonList(apiKey);
         this.chatClient = new OpenAiClient.Builder()
                 .okHttpClient(httpClient)
-                .apiHost("https://api.openai.com/v1/chat/completions")
+                .apiHost("https://api.openai.com/v1/chat/completions/")
                 .apiKey(apiKeys)
                 .build();
         this.whisperClient = new OpenAiClient.Builder()
                 .okHttpClient(httpClient)
-                .apiHost("https://api.openai.com/v1/audio/transcriptions")
+                .apiHost("https://api.openai.com/v1/audio/transcriptions/")
                 .apiKey(apiKeys)
                 .build();
     }
