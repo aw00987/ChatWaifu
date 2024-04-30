@@ -4,8 +4,6 @@ import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -15,13 +13,13 @@ import com.unfbx.chatgpt.entity.chat.BaseMessage;
 import java.util.List;
 
 import cn.wgt.chatwaifu.R;
-import cn.wgt.chatwaifu.entity.ChatMessage;
+import cn.wgt.chatwaifu.entity.Utterance;
 
 public class ChatMessageAdapter extends RecyclerView.Adapter<ChatMessageViewHolder> {
 
-    List<ChatMessage> messageList;
+    List<Utterance> messageList;
 
-    public ChatMessageAdapter(List<ChatMessage> messageList) {
+    public ChatMessageAdapter(List<Utterance> messageList) {
         this.messageList = messageList;
     }
 
@@ -36,15 +34,15 @@ public class ChatMessageAdapter extends RecyclerView.Adapter<ChatMessageViewHold
 
     @Override
     public void onBindViewHolder(@NonNull ChatMessageViewHolder holder, int position) {
-        ChatMessage message = messageList.get(position);
-        if (message.getRole().equals(BaseMessage.Role.USER)) {
+        Utterance message = messageList.get(position);
+        if (message.getSpeaker() == Utterance.Speaker.ME) {
             holder.leftChatView.setVisibility(View.GONE);
             holder.rightChatView.setVisibility(View.VISIBLE);
-            holder.rightTextView.setText(message.getContentText());
-        } else {
+            holder.rightTextView.setText(message.getWords());
+        } else if (message.getSpeaker() == Utterance.Speaker.WAIFU) {
             holder.rightChatView.setVisibility(View.GONE);
             holder.leftChatView.setVisibility(View.VISIBLE);
-            holder.leftTextView.setText(message.getContentText());
+            holder.leftTextView.setText(message.getWords());
         }
     }
 

@@ -6,38 +6,46 @@ import android.media.MediaRecorder;
 import java.io.File;
 
 import cn.wgt.chatwaifu.client.api.ChatAPIClient;
+import cn.wgt.chatwaifu.data.audio.AudioFileRepo;
+import cn.wgt.chatwaifu.data.audio.DefaultAudioRepo;
+import cn.wgt.chatwaifu.entity.AudioFile;
 
 public class WhisperAsrClient implements AsrClient {
-    MediaRecorder recorder = null;
-    File recordFile;
-    IAsrCallback callback;
     ChatAPIClient apiClient;
+    AudioFileRepo audioFileRepo;
     Context context;
-    String lang;
+    IAsrCallback callback;
 
-    public WhisperAsrClient(Context context, ChatAPIClient apiClient, String lang, IAsrCallback callback) {
-
+    public WhisperAsrClient(Context context, IAsrCallback callback) {
         this.context = context;
-        this.apiClient = apiClient;
-        this.lang = lang;
+        this.apiClient = ChatAPIClient.getInstance();
         this.callback = callback;
+        this.audioFileRepo = new DefaultAudioRepo(context);
+    }
 
-        //todo：临时文件存放处？
-        this.recordFile = new File(
-                context.getFilesDir().getAbsolutePath() + "/whisper.m4a"
-        );
+    MediaRecorder currentRecorder = null;
+    AudioFile currentAudioFile = null;
+
+    private MediaRecorder createMediaRecorder(Context context, File outputFile) {
+        MediaRecorder recorder = new MediaRecorder(context);
+        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+
+        recorder.setOutputFile(outputFile);
+
+        return recorder;
     }
 
     @Override
     public void startRecognize() {
+        stopRecognize();
         try {
-            recorder = new MediaRecorder(context);
-            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            recorder.setOutputFile(recordFile.getAbsolutePath());
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            recorder.prepare();
-            recorder.start();
+            currentAudioFile = audioFileRepo.createAudioFile();
+            currentRecorder = createMediaRecorder(context, currentAudioFile.getFile());
+
+            currentRecorder.prepare();
+            currentRecorder.start();
         } catch (Exception e) {
             if (callback != null) {
                 callback.onError(e.getMessage());
@@ -48,19 +56,15 @@ public class WhisperAsrClient implements AsrClient {
     @Override
     public void stopRecognize() {
         try {
-            if (recorder != null) {
-                recorder.stop();
-                recorder.reset();
-                recorder.release();
-                new Thread(() -> {
-                    try {
-                        callback.onResult(apiClient.audio2Text(this.recordFile, lang));
-                    } catch (Exception e) {
-                        if (callback != null) {
-                            callback.onError(e.getMessage());
-                        }
-                    }
-                }).start();
+            if (currentRecorder != null) {
+                currentRecorder.stop();
+                currentRecorder.reset();
+                currentRecorder.release();
+
+                callback.onResult(currentAudioFile);
+
+                currentRecorder = null;
+                currentAudioFile = null;
             }
         } catch (Exception e) {
             if (callback != null) {
@@ -72,10 +76,12 @@ public class WhisperAsrClient implements AsrClient {
     @Override
     public void cancelRecognize() {
         try {
-            if (recorder != null) {
-                recorder.stop();
-                recorder.reset();
-                recorder.release();
+            if (currentRecorder != null) {
+                currentRecorder.stop();
+                currentRecorder.reset();
+                currentRecorder.release();
+                currentRecorder = null;
+                currentAudioFile = null;
             }
         } catch (Exception e) {
             if (callback != null) {

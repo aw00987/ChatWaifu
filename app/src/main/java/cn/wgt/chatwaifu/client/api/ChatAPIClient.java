@@ -7,26 +7,39 @@ import com.unfbx.chatgpt.entity.chat.ChatCompletionResponse;
 import com.unfbx.chatgpt.entity.chat.Message;
 import com.unfbx.chatgpt.entity.whisper.Transcriptions;
 
-import java.io.File;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import cn.wgt.chatwaifu.entity.ChatMessage;
+import cn.wgt.chatwaifu.data.audio.AudioFileRepo;
+import cn.wgt.chatwaifu.entity.AudioFile;
 import okhttp3.ConnectionSpec;
 import okhttp3.OkHttpClient;
 
 public class ChatAPIClient {
 
+    private static final ChatAPIClient instance = new ChatAPIClient();
+
+    private ChatAPIClient() {
+    }
+
+    public static ChatAPIClient getInstance() {
+        return instance;
+    }
+
     OpenAiClient chatClient;
     OpenAiClient whisperClient;
+    WaifuSpeak waifuSpeakClient;
+    AudioFileRepo audioFileRepo;
 
     public ChatAPIClient(String apiKey) {
         OkHttpClient httpClient = new OkHttpClient.Builder()
-                .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-                .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-                .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)
                 .connectionSpecs(Arrays.asList(ConnectionSpec.CLEARTEXT, ConnectionSpec.COMPATIBLE_TLS))
                 .build();
         List<String> apiKeys = Collections.singletonList(apiKey);
@@ -40,19 +53,14 @@ public class ChatAPIClient {
                 .apiHost("https://api.openai.com/v1/audio/transcriptions/")
                 .apiKey(apiKeys)
                 .build();
+        this.waifuSpeakClient = new WaifuSpeakClient(httpClient,
+                "https://api.waifu.im/v2/speak/"//todo：等大任给
+        );
     }
 
-    public String getAnswer(List<ChatMessage> messages) {
+    public String nextMessage(List<Message> msgList) {
         ChatCompletion chat = new ChatCompletion();
         chat.setModel("gpt-3.5-turbo");
-        List<Message> msgList = new ArrayList<>();
-        for (ChatMessage message : messages) {
-            msgList.add(Message.builder()
-                    .role(message.getRole())
-                    .content(message.getContentText())
-                    .build()
-            );
-        }
         chat.setMessages(msgList);
         ChatCompletionResponse resp = chatClient.chatCompletion(chat);
         List<ChatChoice> choices = resp.getChoices();
@@ -60,13 +68,23 @@ public class ChatAPIClient {
         return chatChoice.getMessage().getContent();
     }
 
-    public String audio2Text(File audioFile, String lang) {
+    public String audio2Text(AudioFile audioFile, String lang) {
         Transcriptions transcriptions = new Transcriptions();
         transcriptions.setModel("whisper-1");
         transcriptions.setLanguage(lang);
         return whisperClient.speechToTextTranscriptions(
-                audioFile, transcriptions
+                audioFile.getFile(), transcriptions
         ).getText();
+    }
+
+    public AudioFile text2audio(String text, String lang, String waifuName) {
+        AudioFile audioFile;
+        try (InputStream is = waifuSpeakClient.toVoice(text, lang, waifuName)) {
+            audioFile = audioFileRepo.createAudioFile(is);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return audioFile;
     }
 
 }

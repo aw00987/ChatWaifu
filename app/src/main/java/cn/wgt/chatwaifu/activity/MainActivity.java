@@ -1,6 +1,5 @@
 package cn.wgt.chatwaifu.activity;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
@@ -11,15 +10,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.unfbx.chatgpt.entity.chat.BaseMessage;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import cn.wgt.chatwaifu.R;
 import cn.wgt.chatwaifu.client.api.ChatAPIClient;
 import cn.wgt.chatwaifu.data.ChatMessageAdapter;
-import cn.wgt.chatwaifu.entity.ChatMessage;
+import cn.wgt.chatwaifu.entity.SweetSession;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -30,10 +24,10 @@ public class MainActivity extends AppCompatActivity {
     ImageButton sendButton;
 
     //Data
-    List<ChatMessage> messageList;
+    SweetSession defaultSession;
     ChatMessageAdapter chatMessageAdapter;
 
-    //gpt
+    //GPT
     ChatAPIClient chatAPIClient;
     public static final String YOUR_API_KEY = "sk-proj-W0525eTx5i66nRsNdp7QT3BlbkFJqEy1KaYCeCNHxAaYgE2C";
 
@@ -42,14 +36,17 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //link view;
         recyclerView = findViewById(R.id.recycler_view);
         welcomeTextView = findViewById(R.id.welcome_text);
         messageEditText = findViewById(R.id.message_edit_text);
         sendButton = findViewById(R.id.send_btn);
 
-        //setup recycler view
-        this.messageList = new ArrayList<>();
-        this.chatMessageAdapter = new ChatMessageAdapter(messageList);
+        //setup data
+        this.defaultSession = new SweetSession();
+        this.chatMessageAdapter = new ChatMessageAdapter(defaultSession.getUtteranceList());
+
+        //setup recyclerView
         recyclerView.setAdapter(chatMessageAdapter);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setStackFromEnd(true);
@@ -57,26 +54,23 @@ public class MainActivity extends AppCompatActivity {
 
         //发送问题按钮
         sendButton.setOnClickListener((v) -> {
+            //输入
             String question = messageEditText.getText().toString().trim();
-            runOnUiThread(() -> {
-                addChatMessage(new ChatMessage(BaseMessage.Role.USER, question));
-                new Thread(() -> {
-                    String answer = chatAPIClient.getAnswer(messageList);
-                    runOnUiThread(() ->
-                            addChatMessage(new ChatMessage(BaseMessage.Role.ASSISTANT, answer))
-                    );
-                }).start();
-                messageEditText.setText("");
-                welcomeTextView.setVisibility(View.GONE);
-            });
+            defaultSession.userSpeak(question);
+            messageEditText.setText("");
+            welcomeTextView.setVisibility(View.GONE);
+            refreshView();
+
+            //输出
+            defaultSession.waifuAnswer();
+            refreshView();
         });
 
         this.chatAPIClient = new ChatAPIClient(YOUR_API_KEY);
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    private void addChatMessage(ChatMessage chatMessage) {
-        messageList.add(chatMessage);
+
+    private void refreshView() {
         chatMessageAdapter.notifyDataSetChanged();
         recyclerView.smoothScrollToPosition(chatMessageAdapter.getItemCount());
     }

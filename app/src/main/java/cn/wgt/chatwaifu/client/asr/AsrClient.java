@@ -1,10 +1,13 @@
 package cn.wgt.chatwaifu.client.asr;
 
+import cn.wgt.chatwaifu.entity.AudioFile;
+
 public interface AsrClient {
+
     interface IAsrCallback {
         void onError(String msg);
 
-        void onResult(String result);
+        void onResult(AudioFile audioFile);
     }
 
     void startRecognize();
