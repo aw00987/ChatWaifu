@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import cn.wgt.chatwaifu.R;
 import cn.wgt.chatwaifu.client.api.ChatAPIClient;
-import cn.wgt.chatwaifu.data.ChatMessageAdapter;
+import cn.wgt.chatwaifu.data.SessionDataAdapter;
 import cn.wgt.chatwaifu.entity.SweetSession;
 
 public class MainActivity extends AppCompatActivity {
@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
 
     //Data
     SweetSession defaultSession;
-    ChatMessageAdapter chatMessageAdapter;
+    SessionDataAdapter sessionDataAdapter;
 
     //GPT
     ChatAPIClient chatAPIClient;
@@ -44,10 +44,10 @@ public class MainActivity extends AppCompatActivity {
 
         //setup data
         this.defaultSession = new SweetSession();
-        this.chatMessageAdapter = new ChatMessageAdapter(defaultSession.getUtteranceList());
+        this.sessionDataAdapter = new SessionDataAdapter(defaultSession);
 
         //setup recyclerView
-        recyclerView.setAdapter(chatMessageAdapter);
+        recyclerView.setAdapter(sessionDataAdapter);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setStackFromEnd(true);
         recyclerView.setLayoutManager(layoutManager);
@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void refreshView() {
-        chatMessageAdapter.notifyDataSetChanged();
-        recyclerView.smoothScrollToPosition(chatMessageAdapter.getItemCount());
+        sessionDataAdapter.notifyDataSetChanged();
+        recyclerView.smoothScrollToPosition(sessionDataAdapter.getItemCount());
     }
 }

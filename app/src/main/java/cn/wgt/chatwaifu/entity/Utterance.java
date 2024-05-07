@@ -3,7 +3,10 @@ package cn.wgt.chatwaifu.entity;
 import com.unfbx.chatgpt.entity.chat.BaseMessage;
 import com.unfbx.chatgpt.entity.chat.Message;
 
+import java.util.Date;
 import java.util.UUID;
+
+import cn.wgt.chatwaifu.data.audio.AudioFile;
 
 public class Utterance {
 
@@ -39,6 +42,7 @@ public class Utterance {
     String id;
     Speaker speaker = Speaker.ME;
     String words = "";
+    Date time;
     AudioFile voice = null;
 
     public Utterance() {

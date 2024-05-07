@@ -8,7 +8,7 @@ import java.io.File;
 import cn.wgt.chatwaifu.client.api.ChatAPIClient;
 import cn.wgt.chatwaifu.data.audio.AudioFileRepo;
 import cn.wgt.chatwaifu.data.audio.DefaultAudioRepo;
-import cn.wgt.chatwaifu.entity.AudioFile;
+import cn.wgt.chatwaifu.data.audio.AudioFile;
 
 public class WhisperAsrClient implements AsrClient {
     ChatAPIClient apiClient;

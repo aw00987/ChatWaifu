@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import cn.wgt.chatwaifu.data.audio.AudioFileRepo;
-import cn.wgt.chatwaifu.entity.AudioFile;
+import cn.wgt.chatwaifu.data.audio.AudioFile;
 import okhttp3.ConnectionSpec;
 import okhttp3.OkHttpClient;
 

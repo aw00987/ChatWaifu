@@ -1,6 +1,6 @@
 package cn.wgt.chatwaifu.client.asr;
 
-import cn.wgt.chatwaifu.entity.AudioFile;
+import cn.wgt.chatwaifu.data.audio.AudioFile;
 
 public interface AsrClient {
 

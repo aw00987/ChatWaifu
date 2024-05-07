@@ -7,8 +7,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import cn.wgt.chatwaifu.entity.AudioFile;
-
 public class DefaultAudioRepo implements AudioFileRepo {
 
     File audioFileDir;
@@ -17,10 +15,10 @@ public class DefaultAudioRepo implements AudioFileRepo {
         //data/user/0/[your.package.name]/files
         String filesDir = context.getFilesDir().getAbsolutePath();
         audioFileDir = new File(filesDir + "/audio/");
-        audioFileDir.mkdir();
+        audioFileDir.mkdirs();
     }
 
-
+    @Override
     public AudioFile createAudioFile() {
         AudioFile audioFile = new AudioFile();
         File outputFile = new File(audioFileDir, audioFile.getId() + ".mp3");

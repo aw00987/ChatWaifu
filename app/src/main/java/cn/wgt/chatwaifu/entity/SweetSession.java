@@ -8,15 +8,18 @@ import java.util.List;
 import java.util.UUID;
 
 import cn.wgt.chatwaifu.client.api.ChatAPIClient;
+import cn.wgt.chatwaifu.data.audio.AudioFile;
+import cn.wgt.chatwaifu.data.waifu.Waifu;
 
 public class SweetSession {
 
     String sessionId;
     String sessionName;
-    //todo: enum or db
-    String waifuName;
+
     String lang;
-    String hypnosis;//todo: env
+
+    Waifu waifu;
+
     List<Utterance> utteranceList;
 
     boolean lock;//control page stuck
@@ -25,7 +28,15 @@ public class SweetSession {
 
     public SweetSession() {
         this.sessionId = UUID.randomUUID().toString();
-        utteranceList = new ArrayList<>();
+        utteranceList = new ArrayList<>();//由于随机存取较多，所以使用数组列表是必须的
+    }
+
+    public Utterance getUtteranceByIndex(int index) {
+        return this.utteranceList.get(index);
+    }
+
+    public int getUtteranceNum() {
+        return utteranceList.size();
     }
 
     /**
@@ -61,18 +72,18 @@ public class SweetSession {
         Utterance utterance = new Utterance(Utterance.Speaker.WAIFU, words);
         utteranceList.add(utterance);
         new Thread(() -> {
-            AudioFile voice = apiClient.text2audio(words, lang, waifuName);
+            AudioFile voice = apiClient.text2audio(words, lang, waifu.getName());
             utterance.setVoice(voice);
         }).start();
     }
 
-    public List<Utterance> getUtteranceList() {
-        return utteranceList;
-    }
-
     private List<Message> toGPTMessages() {
         List<Message> msgList = new ArrayList<>();
-        msgList.add(Message.builder().role(BaseMessage.Role.SYSTEM).content(hypnosis).build());
+        msgList.add(Message.builder()
+                .role(BaseMessage.Role.SYSTEM)
+                .content(waifu.getHypnosis())
+                .build()
+        );
         for (Utterance utterance : utteranceList) {
             msgList.add(utterance.toGPTMessage());
         }

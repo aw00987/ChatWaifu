@@ -1,4 +1,4 @@
-package cn.wgt.chatwaifu.entity;
+package cn.wgt.chatwaifu.data.audio;
 
 import java.io.File;
 import java.util.UUID;
