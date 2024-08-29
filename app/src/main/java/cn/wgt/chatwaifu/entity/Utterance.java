@@ -1,8 +1,5 @@
 package cn.wgt.chatwaifu.entity;
 
-import com.unfbx.chatgpt.entity.chat.BaseMessage;
-import com.unfbx.chatgpt.entity.chat.Message;
-
 import java.util.Date;
 import java.util.UUID;
 
@@ -35,8 +32,24 @@ public class Utterance {
     }
 
     public enum Speaker {
-        ME,
-        WAIFU;
+        BG("催眠咒语", "system"),
+        ME("我", "user"),
+        WAIFU("老婆", "assistant");
+        private final String gptRoleEnum;
+        private final String name;
+
+        Speaker(String name, String gptRoleEnum) {
+            this.name = name;
+            this.gptRoleEnum = gptRoleEnum;
+        }
+
+        public String getGptRoleEnum() {
+            return gptRoleEnum;
+        }
+
+        public String getName() {
+            return name;
+        }
     }
 
     String id;
@@ -45,35 +58,18 @@ public class Utterance {
     Date time;
     AudioFile voice = null;
 
-    public Utterance() {
-        this.id = UUID.randomUUID().toString();
-    }
-
     public Utterance(Speaker speaker, AudioFile voice) {
-        this();
+        this.id = UUID.randomUUID().toString();
+        this.time = new Date();
         this.speaker = speaker;
         this.voice = voice;
     }
 
     public Utterance(Speaker speaker, String words) {
-        this();
+        this.id = UUID.randomUUID().toString();
+        this.time = new Date();
         this.speaker = speaker;
         this.words = words;
-    }
-
-    public Message toGPTMessage() {
-        BaseMessage.Role role = null;
-        switch (speaker) {
-            case ME:
-                role = BaseMessage.Role.USER;
-                break;
-            case WAIFU:
-                role = BaseMessage.Role.ASSISTANT;
-                break;
-            default:
-                break;
-        }
-        return Message.builder().role(role).content(this.words).build();
     }
 
 }

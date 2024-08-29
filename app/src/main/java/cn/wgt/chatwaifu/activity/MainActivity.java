@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import cn.wgt.chatwaifu.R;
 import cn.wgt.chatwaifu.client.api.ChatAPIClient;
 import cn.wgt.chatwaifu.data.SessionDataAdapter;
+import cn.wgt.chatwaifu.data.waifu.Waifu;
 import cn.wgt.chatwaifu.entity.SweetSession;
 
 public class MainActivity extends AppCompatActivity {
@@ -27,26 +28,27 @@ public class MainActivity extends AppCompatActivity {
     SweetSession defaultSession;
     SessionDataAdapter sessionDataAdapter;
 
-    //GPT
-    ChatAPIClient chatAPIClient;
-    public static final String YOUR_API_KEY = "sk-proj-W0525eTx5i66nRsNdp7QT3BlbkFJqEy1KaYCeCNHxAaYgE2C";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //link view;
         recyclerView = findViewById(R.id.recycler_view);
         welcomeTextView = findViewById(R.id.welcome_text);
         messageEditText = findViewById(R.id.message_edit_text);
         sendButton = findViewById(R.id.send_btn);
 
-        //setup data
-        this.defaultSession = new SweetSession();
+        //todo：后续从提供Waifu的持久化和增删改查
+        Waifu waifu = new Waifu();
+        waifu.setHypnosis("你是一个优秀的人");
+        waifu.setName("小龙女");
+        waifu.setId("10045");
+        this.defaultSession = new SweetSession(
+                "默认会话", "zh-cn", waifu, null, ChatAPIClient.getInstance()
+        );
+
         this.sessionDataAdapter = new SessionDataAdapter(defaultSession);
 
-        //setup recyclerView
         recyclerView.setAdapter(sessionDataAdapter);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setStackFromEnd(true);
@@ -56,17 +58,17 @@ public class MainActivity extends AppCompatActivity {
         sendButton.setOnClickListener((v) -> {
             //输入
             String question = messageEditText.getText().toString().trim();
-            defaultSession.userSpeak(question);
+            defaultSession.userAsk(question);
             messageEditText.setText("");
             welcomeTextView.setVisibility(View.GONE);
             refreshView();
 
             //输出
-            defaultSession.waifuAnswer();
-            refreshView();
+            new Thread(() -> {
+                defaultSession.waifuAnswer();
+                runOnUiThread(this::refreshView);
+            }).start();
         });
-
-        this.chatAPIClient = new ChatAPIClient(YOUR_API_KEY);
     }
 
 

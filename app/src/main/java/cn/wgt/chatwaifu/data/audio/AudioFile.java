@@ -7,12 +7,8 @@ public class AudioFile {
     String id;
     File file;
 
-    public AudioFile() {
-        this.id = UUID.randomUUID().toString();
-    }
-
     public AudioFile(File file) {
-        this();
+        this.id = UUID.randomUUID().toString();
         this.file = file;
     }
 
@@ -24,7 +20,4 @@ public class AudioFile {
         return file;
     }
 
-    public void setFile(File file) {
-        this.file = file;
-    }
 }

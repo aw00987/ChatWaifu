@@ -1,90 +1,160 @@
 package cn.wgt.chatwaifu.client.api;
 
-import com.unfbx.chatgpt.OpenAiClient;
-import com.unfbx.chatgpt.entity.chat.ChatChoice;
-import com.unfbx.chatgpt.entity.chat.ChatCompletion;
-import com.unfbx.chatgpt.entity.chat.ChatCompletionResponse;
-import com.unfbx.chatgpt.entity.chat.Message;
-import com.unfbx.chatgpt.entity.whisper.Transcriptions;
+import androidx.annotation.NonNull;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import cn.wgt.chatwaifu.data.audio.AudioFileRepo;
 import cn.wgt.chatwaifu.data.audio.AudioFile;
+import cn.wgt.chatwaifu.entity.Utterance;
 import okhttp3.ConnectionSpec;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okio.BufferedSink;
 
 public class ChatAPIClient {
 
-    private static final ChatAPIClient instance = new ChatAPIClient();
+    public static final String OPENAI_API_KEY = "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";
 
-    private ChatAPIClient() {
-    }
+    private static final ChatAPIClient instance = new ChatAPIClient();
 
     public static ChatAPIClient getInstance() {
         return instance;
     }
 
-    OpenAiClient chatClient;
-    OpenAiClient whisperClient;
-    WaifuSpeak waifuSpeakClient;
+    OkHttpClient httpClient;
     AudioFileRepo audioFileRepo;
+    Gson jsonUtil = new Gson();
 
-    public ChatAPIClient(String apiKey) {
-        OkHttpClient httpClient = new OkHttpClient.Builder()
+    private ChatAPIClient() {
+        this.httpClient = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .connectionSpecs(Arrays.asList(ConnectionSpec.CLEARTEXT, ConnectionSpec.COMPATIBLE_TLS))
                 .build();
-        List<String> apiKeys = Collections.singletonList(apiKey);
-        this.chatClient = new OpenAiClient.Builder()
-                .okHttpClient(httpClient)
-                .apiHost("https://api.openai.com/v1/chat/completions/")
-                .apiKey(apiKeys)
+    }
+
+    public String nextMessage(String preSettings, List<Utterance> utteranceList) {
+        JsonArray msgList = new JsonArray();
+        JsonObject bg = new JsonObject();
+        bg.addProperty("role", Utterance.Speaker.BG.getGptRoleEnum());
+        bg.addProperty("content", preSettings);
+        msgList.add(bg);
+        for (Utterance utterance : utteranceList) {
+            JsonObject msg = new JsonObject();
+            msg.addProperty("role", utterance.getSpeaker().getGptRoleEnum());
+            msg.addProperty("content", utterance.getWords());
+            msgList.add(msg);
+        }
+        JsonObject requestBodyJson = new JsonObject();
+        requestBodyJson.addProperty("model", "gpt-4o-mini");
+        requestBodyJson.add("messages", msgList);
+        RequestBody body = RequestBody.create(MediaType.get("application/json; charset=utf-8"), requestBodyJson.toString());
+        Request request = new Request.Builder()
+                .url("https://api.openai.com/v1/chat/completions")
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Authorization", "Bearer " + OPENAI_API_KEY)
+                .post(body)
                 .build();
-        this.whisperClient = new OpenAiClient.Builder()
-                .okHttpClient(httpClient)
-                .apiHost("https://api.openai.com/v1/audio/transcriptions/")
-                .apiKey(apiKeys)
-                .build();
-        this.waifuSpeakClient = new WaifuSpeakClient(httpClient,
-                "https://api.waifu.im/v2/speak/"//todo：等大任给
-        );
-    }
-
-    public String nextMessage(List<Message> msgList) {
-        ChatCompletion chat = new ChatCompletion();
-        chat.setModel("gpt-3.5-turbo");
-        chat.setMessages(msgList);
-        ChatCompletionResponse resp = chatClient.chatCompletion(chat);
-        List<ChatChoice> choices = resp.getChoices();
-        ChatChoice chatChoice = choices.get(0);
-        return chatChoice.getMessage().getContent();
-    }
-
-    public String audio2Text(AudioFile audioFile, String lang) {
-        Transcriptions transcriptions = new Transcriptions();
-        transcriptions.setModel("whisper-1");
-        transcriptions.setLanguage(lang);
-        return whisperClient.speechToTextTranscriptions(
-                audioFile.getFile(), transcriptions
-        ).getText();
-    }
-
-    public AudioFile text2audio(String text, String lang, String waifuName) {
-        AudioFile audioFile;
-        try (InputStream is = waifuSpeakClient.toVoice(text, lang, waifuName)) {
-            audioFile = audioFileRepo.createAudioFile(is);
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (response.isSuccessful() && response.body() != null) {
+                return response.body().string();
+            } else {
+                throw new RuntimeException("Request failed: " + response.code() + " " + response.message());
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return audioFile;
+    }
+
+    private static class AudioRequestBody extends RequestBody {
+
+        InputStream inputStream;
+
+        public AudioRequestBody(InputStream inputStream) {
+            this.inputStream = inputStream;
+        }
+
+        @Override
+        public MediaType contentType() {
+            return MediaType.parse("audio/wav");
+        }
+
+        @Override
+        public void writeTo(@NonNull BufferedSink sink) throws IOException {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                sink.write(buffer, 0, bytesRead);
+            }
+        }
+    }
+
+    //todo: 对接WhisperAPI
+    public String audio2Text(AudioFile audioFile) {
+        File file = audioFile.getFile();
+        try (FileInputStream inputStream = new FileInputStream(file)) {
+            // 创建请求体，设置音频数据
+            RequestBody audioRequestBody = new AudioRequestBody(inputStream);
+            // 创建Multipart请求
+            MultipartBody requestBody = new MultipartBody.Builder()
+                    .setType(MultipartBody.FORM)
+                    .addFormDataPart("file", "audio.wav", audioRequestBody)
+                    .addFormDataPart("model", "whisper-1")  // 如果需要其他参数可以在这里添加
+                    .build();
+            // 创建请求
+            Request request = new Request.Builder()
+                    .url("https://api.openai.com/v1/audio/transcriptions/")
+                    .post(requestBody)
+                    .addHeader("Authorization", "Bearer " + OPENAI_API_KEY)
+                    .build();
+            // 发送请求并处理响应
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    throw new IOException("Unexpected code " + response);
+                }
+                // 获取响应的文本并解析为JsonObject
+                return jsonUtil.fromJson(
+                        response.body().string(), JsonObject.class
+                ).get("text").getAsString();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    //todo: 对接gpt-sovits
+    public AudioFile text2audio(String text, String lang, String waifuName) {
+        Request req = new Request.Builder()
+                .url("https://api.waifu.im/v2/speak/")
+                .addHeader("lang", lang)
+                .addHeader("waifuName", waifuName)
+                .post(RequestBody.create(MediaType.get("text/plain; charset=utf-8"), text))
+                .build();
+
+        try (Response resp = httpClient.newCall(req).execute()) {
+            if (resp.body() == null) {
+                throw new RuntimeException("响应体为空");
+            }
+            return audioFileRepo.createAudioFile(resp.body().byteStream());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

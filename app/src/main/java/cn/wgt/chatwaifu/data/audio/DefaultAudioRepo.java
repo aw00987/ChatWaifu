@@ -19,11 +19,9 @@ public class DefaultAudioRepo implements AudioFileRepo {
     }
 
     @Override
-    public AudioFile createAudioFile() {
-        AudioFile audioFile = new AudioFile();
-        File outputFile = new File(audioFileDir, audioFile.getId() + ".mp3");
-        audioFile.setFile(outputFile);
-        return audioFile;
+    public AudioFile createAudioFile(String fileName) {
+        File outputFile = new File(audioFileDir + "/" + fileName + ".mp3");
+        return new AudioFile(outputFile);
     }
 
     @Override
