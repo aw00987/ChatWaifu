@@ -29,7 +29,7 @@ android {
 }
 
 dependencies {
-
+    implementation libs.okhttp
     implementation libs.appcompat
     implementation libs.material
     testImplementation libs.junit
@@ -37,5 +37,4 @@ dependencies {
     androidTestImplementation libs.espresso.core
     implementation libs.constraintlayout
     implementation libs.gson
-
 }

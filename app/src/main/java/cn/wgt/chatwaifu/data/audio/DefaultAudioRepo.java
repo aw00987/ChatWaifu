@@ -26,7 +26,7 @@ public class DefaultAudioRepo implements AudioFileRepo {
 
     @Override
     public AudioFile createAudioFile(InputStream inputStream) {
-        AudioFile audioFile = createAudioFile();
+        AudioFile audioFile = createAudioFile("默认");
 
         try (FileOutputStream fileOutputStream = new FileOutputStream(audioFile.getFile())) {
             byte[] buffer = new byte[4096];

@@ -41,7 +41,7 @@ public class WhisperAsrClient implements AsrClient {
     public void startRecognize() {
         stopRecognize();
         try {
-            currentAudioFile = audioFileRepo.createAudioFile();
+            currentAudioFile = audioFileRepo.createAudioFile("默认");
             currentRecorder = createMediaRecorder(context, currentAudioFile.getFile());
 
             currentRecorder.prepare();

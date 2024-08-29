@@ -4,7 +4,7 @@ import java.io.InputStream;
 
 public interface AudioFileRepo {
 
-    AudioFile createAudioFile();
+    AudioFile createAudioFile(String fileName);
 
     AudioFile createAudioFile(InputStream inputStream);
 
