@@ -151,7 +151,9 @@ public class ChatAPIClient {
             if (resp.body() == null) {
                 throw new RuntimeException("响应体为空");
             }
-            return audioFileRepo.createAudioFile(resp.body().byteStream());
+            AudioFile audioFile = audioFileRepo.createTmpAudioFile();
+            audioFileRepo.saveAudioFile(audioFile, resp.body().byteStream());
+            return audioFile;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

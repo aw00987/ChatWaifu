@@ -4,11 +4,13 @@ import java.io.InputStream;
 
 public interface AudioFileRepo {
 
-    AudioFile createAudioFile(String fileName);
+    AudioFile createTmpAudioFile();
 
-    AudioFile createAudioFile(InputStream inputStream);
+    void deleteAudioFile(String audioFileId);
 
-    void deleteAudioFile(String id);
+    void saveAudioFile(AudioFile audioFile, InputStream inputStream);
 
-    //todo: void clearAllCache();
+    void clearAllCache();
+
+    void play(AudioFile audioFile);
 }

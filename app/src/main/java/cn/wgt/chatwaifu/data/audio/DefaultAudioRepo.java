@@ -1,14 +1,17 @@
 package cn.wgt.chatwaifu.data.audio;
 
 import android.content.Context;
+import android.media.MediaPlayer;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.UUID;
 
 public class DefaultAudioRepo implements AudioFileRepo {
 
+    MediaPlayer mediaPlayer = new MediaPlayer();
     File audioFileDir;
 
     public DefaultAudioRepo(Context context) {
@@ -19,15 +22,13 @@ public class DefaultAudioRepo implements AudioFileRepo {
     }
 
     @Override
-    public AudioFile createAudioFile(String fileName) {
-        File outputFile = new File(audioFileDir + "/" + fileName + ".mp3");
+    public AudioFile createTmpAudioFile() {
+        File outputFile = new File(audioFileDir + "/" + UUID.randomUUID().toString());
         return new AudioFile(outputFile);
     }
 
     @Override
-    public AudioFile createAudioFile(InputStream inputStream) {
-        AudioFile audioFile = createAudioFile("默认");
-
+    public void saveAudioFile(AudioFile audioFile, InputStream inputStream) {
         try (FileOutputStream fileOutputStream = new FileOutputStream(audioFile.getFile())) {
             byte[] buffer = new byte[4096];
             int bytesRead;
@@ -37,12 +38,30 @@ public class DefaultAudioRepo implements AudioFileRepo {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
 
-        return audioFile;
+    @Override
+    public void clearAllCache() {
+        for (File file : audioFileDir.listFiles()) {
+            file.delete();
+        }
+    }
+
+    @Override
+    public void play(AudioFile audioFile) {
+        try {
+            mediaPlayer.setDataSource(audioFile.getFilePath());
+            mediaPlayer.prepare();
+            mediaPlayer.start();
+
+        } catch (IOException e) {
+            // 处理错误，例如文件不存在
+        }
     }
 
     @Override
     public void deleteAudioFile(String id) {
-        new File(audioFileDir, id + ".mp3").delete();
+        File file = new File(audioFileDir + "/" + id);
+        file.delete();
     }
 }

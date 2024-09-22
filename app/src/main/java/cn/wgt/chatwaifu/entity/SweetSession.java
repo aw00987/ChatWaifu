@@ -19,7 +19,10 @@ public class SweetSession {
     List<Utterance> utteranceList;
     ChatAPIClient apiClient;
 
-    public SweetSession(String sessionName, String lang, Waifu waifu, @Nullable List<Utterance> utteranceList, ChatAPIClient chatAPIClient) {
+    public SweetSession(
+            String sessionName, String lang, Waifu waifu,
+            @Nullable List<Utterance> utteranceList, ChatAPIClient chatAPIClient
+    ) {
         this.sessionId = UUID.randomUUID().toString();
         this.sessionName = sessionName;
         this.lang = lang;
@@ -47,29 +50,30 @@ public class SweetSession {
     /**
      * 适用于语音输入
      */
-    public void userSpeak(AudioFile voice) {
-        Utterance utterance = new Utterance(Utterance.Speaker.ME, voice);
-        utteranceList.add(utterance);
-        new Thread(() -> {
-            String words = apiClient.audio2Text(voice);
-            utterance.setWords(words);
-        }).start();
-    }
-
+//    public void userSpeak(AudioFile voice) {
+//        String words = apiClient.audio2Text(voice);
+//        Utterance utterance = new Utterance(Utterance.Speaker.ME, words);
+//        utterance.setVoice(voice);
+//        utteranceList.add(utterance);
+//    }
     public void waifuAnswer() {
-        String answer = apiClient.nextMessage(waifu.getHypnosis(), utteranceList);
+        String answer = "我爱你";/* todo：暂时写死
+        apiClient.nextMessage(waifu.getHypnosis(), utteranceList);
+        */
         Utterance utterance = new Utterance(Utterance.Speaker.WAIFU, answer);
         utteranceList.add(utterance);
     }
 
-    public void waifuSpeak(String words) {
-        Utterance utterance = new Utterance(Utterance.Speaker.WAIFU, words);
-        utteranceList.add(utterance);
-        new Thread(() -> {
-            AudioFile voice = apiClient.text2audio(words, lang, waifu.getName());
-            utterance.setVoice(voice);
-        }).start();
-    }
+//    public void waifuSpeak(String words) {
+//        Utterance utterance = new Utterance(Utterance.Speaker.WAIFU, words);
+//        utteranceList.add(utterance);
+//        /*
+//        new Thread(() -> {
+//            AudioFile voice = apiClient.text2audio(words, lang, waifu.getName());
+//            utterance.setVoice(voice);
+//        }).start();
+//        */
+//    }
 
     public String toLog() {
         StringBuilder sb = new StringBuilder();

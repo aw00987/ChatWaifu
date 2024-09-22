@@ -58,13 +58,6 @@ public class Utterance {
     Date time;
     AudioFile voice = null;
 
-    public Utterance(Speaker speaker, AudioFile voice) {
-        this.id = UUID.randomUUID().toString();
-        this.time = new Date();
-        this.speaker = speaker;
-        this.voice = voice;
-    }
-
     public Utterance(Speaker speaker, String words) {
         this.id = UUID.randomUUID().toString();
         this.time = new Date();

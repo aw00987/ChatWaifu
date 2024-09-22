@@ -16,6 +16,14 @@ public class AudioFile {
         return id;
     }
 
+    public String getFileName() {
+        return id;
+    }
+
+    public String getFilePath() {
+        return file.getPath();
+    }
+
     public File getFile() {
         return file;
     }
